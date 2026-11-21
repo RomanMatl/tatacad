@@ -20,6 +20,7 @@
 include("scripts/library.js");
 include("scripts/WidgetFactory.js");
 include("scripts/Widgets/OptionsToolBar/OptionsToolBar.js");
+include("scripts/Widgets/DynamicInput/DynamicInputState.js");
 
 /**
  * Base class for all ECMAScript based actions.
@@ -128,6 +129,8 @@ EAction.prototype.finishEvent = function() {
         return;
     }
 
+    DynamicInputState.clear(this);
+
     var guiAction = this.getGuiAction();
 
     // unckeck tool GUI action:
@@ -233,6 +236,7 @@ EAction.prototype.setState = function(state) {
     this.state = state;
 
     this.initState();
+    DynamicInputState.publish(this);
 
     if (state!==-1) {
         this.simulateMouseMoveEvent();

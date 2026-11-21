@@ -3198,6 +3198,7 @@
     <file alias="scripts/Widgets/DynamicInput/DynamicInput-inverse.svg">../../scripts/Widgets/DynamicInput/DynamicInput-inverse.svg</file>
     <file alias="scripts/Widgets/DynamicInput/DynamicInput.js">../../scripts/Widgets/DynamicInput/DynamicInput.js</file>
     <file alias="scripts/Widgets/DynamicInput/DynamicInput.svg">../../scripts/Widgets/DynamicInput/DynamicInput.svg</file>
+    <file alias="scripts/Widgets/DynamicInput/DynamicInputState.js">../../scripts/Widgets/DynamicInput/DynamicInputState.js</file>
     <file alias="scripts/Widgets/FirstStart/firststart-inverse.jpg">../../scripts/Widgets/FirstStart/firststart-inverse.jpg</file>
     <file alias="scripts/Widgets/FirstStart/firststart.jpg">../../scripts/Widgets/FirstStart/firststart.jpg</file>
     <file alias="scripts/Widgets/FirstStart/FirstStart.js">../../scripts/Widgets/FirstStart/FirstStart.js</file>
