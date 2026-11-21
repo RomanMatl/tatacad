@@ -54,7 +54,9 @@ function Write-Step([string]$Message) {
 
 function Invoke-Native {
     param([string]$FilePath, [string[]]$ArgumentList)
-    & $FilePath @ArgumentList
+    # Out-Host: native output must not end up in the return value of the
+    # calling function (e.g. Get-QtDir).
+    & $FilePath @ArgumentList | Out-Host
     if ($LASTEXITCODE -ne 0) {
         throw "'$FilePath $($ArgumentList -join ' ')' failed with exit code $LASTEXITCODE"
     }

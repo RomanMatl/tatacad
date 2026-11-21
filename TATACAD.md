@@ -134,7 +134,7 @@ push to `master` (and manually):
 2. builds the macOS package ([`packaging/macos/build-macos.sh`](packaging/macos/build-macos.sh),
    self-contained `TataCAD.app`, ad-hoc signed) and both launchers
    ([`packaging/launcher/build-launcher.sh`](packaging/launcher/build-launcher.sh))
-   on `macos-14`, and the Windows package on `windows-2022`;
+   on `macos-15`, and the Windows package on `windows-2022`;
 3. creates the GitHub release `v<version>` with all files;
 4. commits `release/manifest.json` (`[skip ci]`) – from then on launchers
    install the new version.
