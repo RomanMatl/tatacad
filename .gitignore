@@ -1,5 +1,8 @@
 debug
 release
+!/release/
+/release/*
+!/release/manifest.json
 build
 plugins
 .qtcreator_build

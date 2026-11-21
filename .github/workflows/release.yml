@@ -50,6 +50,7 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: launcher/go.mod
+          cache: false
       - name: Cache Qt
         id: qt-cache
         uses: actions/cache@v4
@@ -119,6 +120,10 @@ jobs:
       - name: Create GitHub release
         run: |
           ls -la artifacts
+          if gh release view "v$VERSION" >/dev/null 2>&1; then
+            gh release upload "v$VERSION" artifacts/* --clobber
+            exit 0
+          fi
           gh release create "v$VERSION" artifacts/* \
             --title "TataCAD $VERSION" \
             --target "$GITHUB_SHA" \
@@ -153,7 +158,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add release/manifest.json
+          git add -f release/manifest.json
           git commit -m "Release $VERSION [skip ci]"
           for i in 1 2 3; do
             git pull --rebase origin master && git push origin HEAD:master && exit 0
