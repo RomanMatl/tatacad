@@ -93,9 +93,15 @@ RLayerListQt.prototype.updateLayers = function(documentInterface, previousLayerI
         }
         var item = new QListWidgetItem(layer.getName(), this);
         var iconName = autoIconPath(this.basePath
-                + "/layerstatus_%1%2.svg".arg(Number(layer.isFrozen()))
+                + "/layerstatus_%1%2.svg".arg(Number(layer.isOffOrFrozen()))
                 .arg(Number(layer.isLocked())));
         item.setIcon(new QIcon(iconName));
+        if (layer.isFrozen()) {
+            var font = item.font();
+            font.setItalic(true);
+            item.setFont(font);
+            item.setToolTip(qsTr("Frozen"));
+        }
         if (layer.isProtected()) {
             item.setData(Qt.UserRole, true);
         }
@@ -131,9 +137,7 @@ RLayerListQt.prototype.iconClickedSlot = function(x, item) {
     }
 
     if (x < this.iconSize.width() / 2) {
-        var off = !layer.isFrozen();
-        layer.setFrozen(off);
-        layer.setOff(off);
+        layer.setOff(!layer.isOff());
     } else {
         layer.setLocked(!layer.isLocked());
     }

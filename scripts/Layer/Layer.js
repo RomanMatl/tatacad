@@ -137,12 +137,14 @@ Layer.init = function() {
     Layer.getToolMatrixPanel();
 };
 
+// TataCAD: visibility (on/off) and freeze are always separate, also without
+// the Pro tools; freezing has its own action (Layer/ToggleLayerFreeze).
 Layer.getShowFrozen = function() {
     if (hasPlugin("PROTOOLS")) {
         return RSettings.getBoolValue("LayerListPro/ShowFrozen", false);
     }
     else {
-        return false;
+        return true;
     }
 };
 

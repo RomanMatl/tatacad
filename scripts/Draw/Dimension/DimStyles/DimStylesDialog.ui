@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>DimStylesDialog</class>
+ <widget class="QDialog" name="DimStylesDialog">
+  <property name="windowTitle"><string>Dimension Styles</string></property>
+  <property name="minimumSize"><size><width>560</width><height>360</height></size></property>
+  <layout class="QHBoxLayout" name="MainLayout">
+   <item>
+    <layout class="QVBoxLayout" name="LeftLayout">
+     <item><widget class="QLabel" name="StylesLabel"><property name="text"><string>Saved styles:</string></property></widget></item>
+     <item><widget class="QListWidget" name="Styles"/></item>
+     <item><widget class="QLabel" name="Details"><property name="wordWrap"><bool>true</bool></property></widget></item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QVBoxLayout" name="RightLayout">
+     <item><widget class="QPushButton" name="Apply"><property name="text"><string>&amp;Apply to drawing</string></property></widget></item>
+     <item><widget class="QPushButton" name="Delete"><property name="text"><string>&amp;Delete</string></property></widget></item>
+     <item><widget class="QLabel" name="NameLabel"><property name="text"><string>Save current settings as:</string></property></widget></item>
+     <item><widget class="QLineEdit" name="Name"/></item>
+     <item><widget class="QPushButton" name="SaveCurrent"><property name="text"><string>&amp;Save current</string></property></widget></item>
+     <item><widget class="QPushButton" name="EditCurrent"><property name="text"><string>&amp;Edit current settings…</string></property></widget></item>
+     <item><spacer name="Spacer"><property name="orientation"><enum>Qt::Vertical</enum></property></spacer></item>
+     <item><widget class="QLabel" name="Message"><property name="wordWrap"><bool>true</bool></property></widget></item>
+     <item><widget class="QPushButton" name="Close"><property name="text"><string>&amp;Close</string></property></widget></item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections>
+  <connection><sender>Close</sender><signal>clicked()</signal><receiver>DimStylesDialog</receiver><slot>accept()</slot></connection>
+ </connections>
+</ui>

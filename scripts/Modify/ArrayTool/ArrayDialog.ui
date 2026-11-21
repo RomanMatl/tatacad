@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>ArrayDialog</class>
+ <widget class="QDialog" name="ArrayDialog">
+  <property name="windowTitle"><string>Array</string></property>
+  <layout class="QVBoxLayout" name="MainLayout">
+   <item>
+    <widget class="QRadioButton" name="Rectangular">
+     <property name="text"><string>R&amp;ectangular array</string></property>
+     <property name="checked"><bool>true</bool></property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="RectangularGroup">
+     <property name="title"><string>Rectangular</string></property>
+     <layout class="QGridLayout" name="RectangularLayout">
+    <item row="0" column="0"><widget class="QLabel"><property name="text"><string>Rows:</string></property></widget></item>
+    <item row="0" column="1">
+     <widget class="RMathLineEdit" name="Rows">
+      <property name="angle" stdset="0"><bool>false</bool></property>
+      <property name="integer" stdset="0"><bool>true</bool></property>
+      <property name="text"><string notr="true">3</string></property>
+     </widget>
+    </item>
+    <item row="1" column="0"><widget class="QLabel"><property name="text"><string>Columns:</string></property></widget></item>
+    <item row="1" column="1">
+     <widget class="RMathLineEdit" name="Columns">
+      <property name="angle" stdset="0"><bool>false</bool></property>
+      <property name="integer" stdset="0"><bool>true</bool></property>
+      <property name="text"><string notr="true">4</string></property>
+     </widget>
+    </item>
+    <item row="2" column="0"><widget class="QLabel"><property name="text"><string>Row spacing (Y):</string></property></widget></item>
+    <item row="2" column="1">
+     <widget class="RMathLineEdit" name="RowSpacing">
+      <property name="angle" stdset="0"><bool>false</bool></property>
+      <property name="integer" stdset="0"><bool>false</bool></property>
+      <property name="text"><string notr="true">10</string></property>
+     </widget>
+    </item>
+    <item row="3" column="0"><widget class="QLabel"><property name="text"><string>Column spacing (X):</string></property></widget></item>
+    <item row="3" column="1">
+     <widget class="RMathLineEdit" name="ColumnSpacing">
+      <property name="angle" stdset="0"><bool>false</bool></property>
+      <property name="integer" stdset="0"><bool>false</bool></property>
+      <property name="text"><string notr="true">10</string></property>
+     </widget>
+    </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QRadioButton" name="Polar">
+     <property name="text"><string>&amp;Polar array (pick center point afterwards)</string></property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="PolarGroup">
+     <property name="enabled"><bool>false</bool></property>
+     <property name="title"><string>Polar</string></property>
+     <layout class="QGridLayout" name="PolarLayout">
+    <item row="0" column="0"><widget class="QLabel"><property name="text"><string>Number of items:</string></property></widget></item>
+    <item row="0" column="1">
+     <widget class="RMathLineEdit" name="Count">
+      <property name="angle" stdset="0"><bool>false</bool></property>
+      <property name="integer" stdset="0"><bool>true</bool></property>
+      <property name="text"><string notr="true">6</string></property>
+     </widget>
+    </item>
+    <item row="1" column="0"><widget class="QLabel"><property name="text"><string>Angle to fill:</string></property></widget></item>
+    <item row="1" column="1">
+     <widget class="RMathLineEdit" name="FillAngle">
+      <property name="angle" stdset="0"><bool>true</bool></property>
+      <property name="integer" stdset="0"><bool>false</bool></property>
+      <property name="text"><string notr="true">360</string></property>
+     </widget>
+    </item>
+    <item row="2" column="0" colspan="2"><widget class="QCheckBox" name="RotateItems"><property name="text"><string>&amp;Rotate items</string></property><property name="checked"><bool>true</bool></property></widget></item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QCheckBox" name="UseCurrentAttributes">
+     <property name="text"><string>Use current layer and &amp;attributes</string></property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QDialogButtonBox" name="ButtonBox">
+     <property name="standardButtons"><set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set></property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget><class>RMathLineEdit</class><extends>QLineEdit</extends><header>RMathLineEdit.h</header></customwidget>
+ </customwidgets>
+ <resources/>
+ <connections>
+  <connection><sender>ButtonBox</sender><signal>accepted()</signal><receiver>ArrayDialog</receiver><slot>accept()</slot></connection>
+  <connection><sender>ButtonBox</sender><signal>rejected()</signal><receiver>ArrayDialog</receiver><slot>reject()</slot></connection>
+  <connection><sender>Rectangular</sender><signal>toggled(bool)</signal><receiver>RectangularGroup</receiver><slot>setEnabled(bool)</slot></connection>
+  <connection><sender>Polar</sender><signal>toggled(bool)</signal><receiver>PolarGroup</receiver><slot>setEnabled(bool)</slot></connection>
+ </connections>
+</ui>

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>CenterMark</class>
+ <widget class="QWidget" name="CenterMark">
+  <layout class="QHBoxLayout">
+   <item>
+    <widget class="QLabel" name="SizeLabel">
+     <property name="text"><string>Mark size:</string></property>
+     <property name="buddy"><cstring>Size</cstring></property>
+    </widget>
+   </item>
+   <item>
+    <widget class="RMathLineEdit" name="Size">
+     <property name="angle" stdset="0"><bool>false</bool></property>
+     <property name="defaultUnit" stdset="0"><number>0</number></property>
+     <property name="text"><string notr="true">2.5</string></property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QCheckBox" name="CenterLines">
+     <property name="text"><string>Center &amp;lines</string></property>
+     <property name="checked"><bool>true</bool></property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget><class>RMathLineEdit</class><extends>QLineEdit</extends><header>RMathLineEdit.h</header></customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>
