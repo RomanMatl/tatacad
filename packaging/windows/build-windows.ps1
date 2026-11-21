@@ -26,6 +26,8 @@ param(
     [string]$QtRoot = "C:\Qt",
     [string]$QtArch = "win64_msvc2022_64",
     [string]$OutDir = "",
+    # Release builds pass e.g. 27.0.7.42; default is the version from RVersion.h.
+    [string]$Version = "",
     [int]$Jobs = [Environment]::ProcessorCount,
     [switch]$SkipInstaller,
     [switch]$Clean
@@ -239,7 +241,9 @@ if (-not (Test-Path $windeployqt)) {
     throw "windeployqt.exe not found in $QtDir\bin"
 }
 
-$Version = Get-AppVersion
+if (-not $Version) {
+    $Version = Get-AppVersion
+}
 Write-Host "TataCAD version: $Version"
 
 $JsDir = Join-Path $RepoRoot "jsapi"
@@ -295,6 +299,11 @@ Get-ChildItem -Path $ReleaseDir -File |
     Where-Object { $_.Extension -in ".exe", ".com", ".dll" } |
     Copy-Item -Destination $Stage
 Get-ChildItem -Path $PluginDir -File -Filter *.dll | Copy-Item -Destination (Join-Path $Stage "plugins")
+# Custom widgets (RCommandLine, RMathLineEdit, ...) used by the .ui files;
+# without them the main window fails to load:
+New-Item -ItemType Directory -Force -Path (Join-Path $Stage "plugins\designer") | Out-Null
+Get-ChildItem -Path (Join-Path $PluginDir "designer") -File -Filter *.dll |
+    Copy-Item -Destination (Join-Path $Stage "plugins\designer")
 Copy-Item (Join-Path $RepoRoot "qt.conf") $Stage
 
 foreach ($dir in "fonts", "patterns", "linetypes", "themes", "libraries", "examples") {
@@ -329,7 +338,8 @@ Set-Content -Path (Join-Path $Stage "SOURCE.txt") -Value $sourceNote -Encoding U
 Write-Step "Deploying Qt (windeployqt)"
 $deployTargets = @($exe) +
     (Get-ChildItem -Path $Stage -File -Filter *.dll | ForEach-Object FullName) +
-    (Get-ChildItem -Path (Join-Path $Stage "plugins") -File -Filter *.dll | ForEach-Object FullName)
+    (Get-ChildItem -Path (Join-Path $Stage "plugins") -File -Filter *.dll | ForEach-Object FullName) +
+    (Get-ChildItem -Path (Join-Path $Stage "plugins\designer") -File -Filter *.dll | ForEach-Object FullName)
 Invoke-Native $windeployqt (@("--release", "--no-translations", "--no-compiler-runtime",
                               "--dir", $Stage, "--plugindir", (Join-Path $Stage "plugins")) + $deployTargets)
 Copy-MsvcRuntime $Stage

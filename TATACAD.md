@@ -90,6 +90,59 @@ powershell -ExecutionPolicy Bypass -File packaging\windows\build-windows.ps1
 Details, parameters and prerequisites: [`packaging/windows/README.md`](packaging/windows/README.md).
 The script has not been run on Windows yet; expect fixes on the first build.
 
+## Installing and updating (launcher)
+
+Users install TataCAD with the **launcher** from the latest GitHub release and
+always start TataCAD through it:
+
+| System | Download |
+|---|---|
+| Windows x64 | [TataCAD-Launcher-windows-x64.exe](../../releases/latest/download/TataCAD-Launcher-windows-x64.exe) |
+| macOS (Apple Silicon) | [TataCAD-Launcher-macos-arm64.zip](../../releases/latest/download/TataCAD-Launcher-macos-arm64.zip) |
+
+On every start the launcher ([`launcher/`](launcher), Go, no dependencies):
+
+1. reads `release/manifest.json` from this repository (version, package URL,
+   SHA-256 per platform);
+2. if nothing is installed or the manifest has a newer version, downloads the
+   package, verifies the checksum, extracts it to `versions/<version>/` and
+   switches `current.json` to it (the previous version is kept as a fallback,
+   older ones are deleted);
+3. starts TataCAD. Without network access it starts the installed version.
+
+Install folder (per user, no admin rights): `%LOCALAPPDATA%\TataCAD` on
+Windows, `~/Library/Application Support/TataCAD` on macOS. On Windows the
+launcher also copies itself there as `TataCAD.exe` and creates Start menu and
+desktop shortcuts. A console window with progress appears only while
+downloading; on macOS progress is shown as notifications.
+
+Inside TataCAD, *Help > Check for Updates* reads the same manifest and offers
+"update and restart" (starts the launcher with `-wait-pid`, then quits); a
+silent check at startup leaves a note in the command line when a newer version
+exists. Development builds (not started from a launcher install) skip this.
+
+Launcher options: `-check` (show installed / available version), `-no-launch`,
+`-manifest <url>`, `-root <dir>`; environment `TATACAD_HOME`,
+`TATACAD_MANIFEST_URL`.
+
+## Release pipeline
+
+[`.github/workflows/release.yml`](.github/workflows/release.yml) runs on every
+push to `master` (and manually):
+
+1. version = `<RVersion.h major.minor.rev>.<workflow run number>`;
+2. builds the macOS package ([`packaging/macos/build-macos.sh`](packaging/macos/build-macos.sh),
+   self-contained `TataCAD.app`, ad-hoc signed) and both launchers
+   ([`packaging/launcher/build-launcher.sh`](packaging/launcher/build-launcher.sh))
+   on `macos-14`, and the Windows package on `windows-2022`;
+3. creates the GitHub release `v<version>` with all files;
+4. commits `release/manifest.json` (`[skip ci]`) – from then on launchers
+   install the new version.
+
+Packages are release assets rather than files committed to git: each package
+is close to 100 MB, GitHub rejects files above 100 MB and the repository
+would grow with every release. The manifest is the only committed release file.
+
 ## Distribution notes
 
 - **License:** GPLv3. Ship the complete source with binaries, including the
@@ -97,4 +150,8 @@ The script has not been run on Windows yet; expect fixes on the first build.
 - **Name:** QCAD is a trademark of RibbonSoft. Distribute as TataCAD; the
   executable is still `qcad.exe` / `QCAD.app` and carries the QCAD icon, which
   should be replaced before public distribution.
-- **Signing:** packages are not code-signed (SmartScreen / Gatekeeper warn).
+- **Signing:** packages and launchers are not code-signed with a vendor
+  certificate. Windows SmartScreen warns on first start of the launcher
+  ("More info > Run anyway"); on macOS the launcher must be allowed once
+  (right-click > Open, or System Settings > Privacy & Security > Open Anyway).
+  TataCAD itself, downloaded by the launcher, is not quarantined.

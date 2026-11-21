@@ -1,0 +1,162 @@
+# Builds TataCAD for Windows x64 and macOS arm64 on every push to master,
+# publishes a GitHub release (v<version>) with the packages and the launchers,
+# and commits release/manifest.json, which the launcher reads to install and
+# update TataCAD.
+name: Release
+
+on:
+  push:
+    branches: [master]
+    paths-ignore:
+      - "release/manifest.json"
+      - "**.md"
+  workflow_dispatch:
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+env:
+  QT_VERSION: "6.9.0"
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      manifest_url: ${{ steps.v.outputs.manifest_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: v
+        run: |
+          h=src/core/RVersion.h
+          get() { sed -n "s/^#define R_QCAD_VERSION_$1 *\([0-9]*\).*/\1/p" "$h"; }
+          version="$(get MAJOR).$(get MINOR).$(get REV).${GITHUB_RUN_NUMBER}"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "manifest_url=https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/master/release/manifest.json" >> "$GITHUB_OUTPUT"
+          echo "TataCAD $version"
+
+  macos:
+    needs: version
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: launcher/go.mod
+      - name: Cache Qt
+        id: qt-cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/Qt
+          key: qt-macos-${{ env.QT_VERSION }}-qt5compat
+      - name: Install Qt
+        if: steps.qt-cache.outputs.cache-hit != 'true'
+        run: |
+          python -m pip install aqtinstall
+          python -m aqt install-qt mac desktop "$QT_VERSION" clang_64 -m qt5compat --outputdir "$RUNNER_TEMP/Qt"
+      - name: Install Ninja
+        run: brew install ninja
+      - name: Build TataCAD
+        run: packaging/macos/build-macos.sh --qt "$RUNNER_TEMP/Qt/$QT_VERSION/macos" --version "${{ needs.version.outputs.version }}"
+      - name: Build launchers
+        run: packaging/launcher/build-launcher.sh --manifest "${{ needs.version.outputs.manifest_url }}" --version "${{ needs.version.outputs.version }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos
+          path: |
+            dist/TataCAD-*-macos-*.zip
+            dist/TataCAD-Launcher-macos-arm64.zip
+            dist/TataCAD-Launcher-windows-x64.exe
+          if-no-files-found: error
+
+  windows:
+    needs: version
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Cache Qt
+        uses: actions/cache@v4
+        with:
+          path: C:\Qt
+          key: qt-windows-${{ env.QT_VERSION }}-msvc2022_64-qt5compat
+      - name: Install Ninja
+        run: choco install ninja -y --no-progress
+      - name: Build TataCAD
+        shell: pwsh
+        run: |
+          .\packaging\windows\build-windows.ps1 -QtVersion $env:QT_VERSION -QtRoot C:\Qt `
+            -Version "${{ needs.version.outputs.version }}" -SkipInstaller
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: dist/TataCAD-*-win-x64.zip
+          if-no-files-found: error
+
+  release:
+    needs: [version, macos, windows]
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+      - name: Create GitHub release
+        run: |
+          ls -la artifacts
+          gh release create "v$VERSION" artifacts/* \
+            --title "TataCAD $VERSION" \
+            --target "$GITHUB_SHA" \
+            --notes "Built from $GITHUB_SHA.
+
+          Install: download the launcher for your system and start it; it downloads, installs and updates TataCAD.
+          - Windows x64: TataCAD-Launcher-windows-x64.exe
+          - macOS (Apple Silicon): TataCAD-Launcher-macos-arm64.zip"
+      - name: Write manifest
+        run: |
+          base="https://github.com/${GITHUB_REPOSITORY}/releases/download/v$VERSION"
+          win=$(ls artifacts/TataCAD-*-win-x64.zip)
+          mac=$(ls artifacts/TataCAD-*-macos-arm64.zip | grep -v Launcher)
+          entry() { # file executable
+            printf '{"url": "%s/%s", "sha256": "%s", "size": %s, "executable": "%s"}' \
+              "$base" "$(basename "$1")" "$(sha256sum "$1" | cut -d' ' -f1)" "$(stat -c%s "$1")" "$2"
+          }
+          mkdir -p release
+          cat > release/manifest.json <<EOF
+          {
+            "version": "$VERSION",
+            "released": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "commit": "$GITHUB_SHA",
+            "platforms": {
+              "windows-x64": $(entry "$win" "TataCAD/qcad.exe"),
+              "macos-arm64": $(entry "$mac" "TataCAD.app")
+            }
+          }
+          EOF
+          python3 -m json.tool release/manifest.json
+      - name: Commit manifest
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add release/manifest.json
+          git commit -m "Release $VERSION [skip ci]"
+          for i in 1 2 3; do
+            git pull --rebase origin master && git push origin HEAD:master && exit 0
+            sleep 5
+          done
+          exit 1

@@ -1,3 +1,9 @@
+> **TataCAD** – this repository is TataCAD, a fork of QCAD with an AutoCAD-style
+> "Tata Panel" and extra tools. Download the launcher (installs and updates
+> TataCAD): [Windows x64](../../releases/latest/download/TataCAD-Launcher-windows-x64.exe) ·
+> [macOS Apple Silicon](../../releases/latest/download/TataCAD-Launcher-macos-arm64.zip).
+> Details: [TATACAD.md](TATACAD.md). The original QCAD README follows.
+
 QCAD - The Open Source 2D CAD
 =============================
 
