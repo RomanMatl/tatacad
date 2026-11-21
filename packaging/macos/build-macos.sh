@@ -107,6 +107,9 @@ for f in "$PLG"/*.dylib "$PLG"/designer/*.dylib "$FW"/*.dylib; do
     exec_args+=("-executable=$f")
 done
 "$QT/bin/macdeployqt" "$APP" -libpath="$REPO/release" "${exec_args[@]}" -verbose=1
+# Qt's ODBC, PostgreSQL and Mimer drivers link client libraries that are not
+# part of macOS; TataCAD only needs SQLite.
+find "$PLG/sqldrivers" -name '*.dylib' ! -name 'libqsqlite.dylib' -delete 2>/dev/null || true
 
 step "Fixing rpaths"
 rpaths() { otool -l "$1" | awk '/LC_RPATH/{f=1} f&&/ path /{print $2; f=0}'; }
