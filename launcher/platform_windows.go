@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -22,6 +23,7 @@ var (
 	procWaitForObj   = kernel32.NewProc("WaitForSingleObject")
 	procCloseHandle  = kernel32.NewProc("CloseHandle")
 	procSetConsoleCP = kernel32.NewProc("SetConsoleOutputCP")
+	procShellExecW   = syscall.NewLazyDLL("shell32.dll").NewProc("ShellExecuteW")
 )
 
 func platformDefaultRoot() string {
@@ -37,16 +39,44 @@ const (
 	errorIntegrityPolicyBlocked = syscall.Errno(4551)
 )
 
-func launchErrorMessage(exe string, err error) string {
-	if errors.Is(err, errorIntegrityPolicyBlocked) || errors.Is(err, errorAccessDisabledByPolicy) ||
-		strings.Contains(err.Error(), "Application Control") {
-		return "Windows blocked TataCAD from starting (" + err.Error() + ").\n\n" +
-			"This is usually Smart App Control (Windows Security > App & browser control), " +
-			"which only allows code-signed applications, or an application control policy " +
-			"set by your organisation. TataCAD is not code-signed yet.\n\n" +
-			"Installed in: " + filepath.Dir(exe)
+// reportLaunchError explains a start blocked by Smart App Control or an
+// application control policy and offers to open the Windows Security page
+// where the user can change it; the launcher never changes it itself.
+func reportLaunchError(exe string, err error) {
+	if !errors.Is(err, errorIntegrityPolicyBlocked) && !errors.Is(err, errorAccessDisabledByPolicy) &&
+		!strings.Contains(err.Error(), "Application Control") {
+		fatal(fmt.Sprintf("Cannot start TataCAD: %v", err))
 	}
-	return fmt.Sprintf("Cannot start TataCAD: %v", err)
+	log.Printf("start blocked by application control: %v", err)
+	msg := "Windows zablokoval spuštění TataCADu.\n\n" +
+		"Obvykle to dělá Inteligentní řízení aplikací (Smart App Control), které pouští " +
+		"jen aplikace podepsané certifikátem. TataCAD zatím podepsaný není. Na firemním " +
+		"počítači to může být i politika nastavená správcem.\n\n" +
+		"Otevřít Zabezpečení Windows > Řízení aplikací a prohlížeče? Tam lze v části " +
+		"„Nastavení inteligentního řízení aplikací“ ochranu vypnout. Vypnutí je trvalé " +
+		"a snižuje ochranu počítače. Potom spusťte TataCAD znovu zástupcem na ploše.\n\n" +
+		"(" + err.Error() + ")"
+	if askYesNo(msg) {
+		openURL("windowsdefender://appbrowser")
+	}
+	os.Exit(1)
+}
+
+func askYesNo(msg string) bool {
+	t, _ := syscall.UTF16PtrFromString("TataCAD")
+	m, _ := syscall.UTF16PtrFromString(msg)
+	const mbYesNo, mbIconWarning, idYes = 0x4, 0x30, 6
+	r, _, _ := procMessageBoxW.Call(0, uintptr(unsafe.Pointer(m)), uintptr(unsafe.Pointer(t)), mbYesNo|mbIconWarning)
+	return r == idYes
+}
+
+func openURL(url string) {
+	verb, _ := syscall.UTF16PtrFromString("open")
+	u, _ := syscall.UTF16PtrFromString(url)
+	const swShowNormal = 1
+	if r, _, _ := procShellExecW.Call(0, uintptr(unsafe.Pointer(verb)), uintptr(unsafe.Pointer(u)), 0, 0, swShowNormal); r <= 32 {
+		log.Printf("cannot open %s (ShellExecute %d)", url, r)
+	}
 }
 
 func launch(exe string, args []string) error {

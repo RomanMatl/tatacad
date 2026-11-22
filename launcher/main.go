@@ -106,7 +106,7 @@ func main() {
 	exe := in.ExecutablePath(installed)
 	log.Printf("starting %s", exe)
 	if err := launch(exe, flag.Args()); err != nil {
-		fatal(launchErrorMessage(exe, err))
+		reportLaunchError(exe, err)
 	}
 }
 
