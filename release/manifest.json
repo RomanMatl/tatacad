@@ -1,9 +1,9 @@
 {
-  "version": "27.0.7.4",
-  "released": "2026-11-22T00:37:43Z",
-  "commit": "cf986d46986fc6bfddd87fdb4d4800dc7089b51b",
+  "version": "27.0.7.8",
+  "released": "2026-11-22T08:32:51Z",
+  "commit": "21ab0a6add22789338d7e1d7aa72742609015fe5",
   "platforms": {
-    "windows-x64": {"url": "https://github.com/RomanMatl/tatacad/releases/download/v27.0.7.4/TataCAD-27.0.7.4-win-x64.zip", "sha256": "590bf0e169620d1dca12d7159dbcbf30cc691464f950e93fc5427a7b8d7d8653", "size": 80794583, "executable": "TataCAD/qcad.exe"},
-    "macos-arm64": {"url": "https://github.com/RomanMatl/tatacad/releases/download/v27.0.7.4/TataCAD-27.0.7.4-macos-arm64.zip", "sha256": "020d7c60a44fdbe1f88462174f8ca8dfae10f4f3dc76d93ca76f31e75ffe9faf", "size": 84139327, "executable": "TataCAD.app"}
+    "windows-x64": {"url": "https://github.com/RomanMatl/tatacad/releases/download/v27.0.7.8/TataCAD-27.0.7.8-win-x64.zip", "sha256": "4cd4e420e4fab228c976ec155d4486a0910b88a2c73c7e7075f4c2ba340b2904", "size": 80795095, "executable": "TataCAD/qcad.exe"},
+    "macos-arm64": {"url": "https://github.com/RomanMatl/tatacad/releases/download/v27.0.7.8/TataCAD-27.0.7.8-macos-arm64.zip", "sha256": "ed521d042f4952c90d990e14888c45012d8f62ae0c4f978ee0ad5872d40b0164", "size": 84140053, "executable": "TataCAD.app"}
   }
 }
