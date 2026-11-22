@@ -15,6 +15,10 @@ func platformDefaultRoot() string {
 }
 
 // launch opens the bundle with LaunchServices; extra args are files to open.
+func launchErrorMessage(app string, err error) string {
+	return fmt.Sprintf("Cannot start TataCAD: %v", err)
+}
+
 func launch(app string, args []string) error {
 	cmdArgs := []string{"-n", app}
 	if len(args) > 0 {

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -20,6 +21,7 @@ var (
 	procOpenProcess  = kernel32.NewProc("OpenProcess")
 	procWaitForObj   = kernel32.NewProc("WaitForSingleObject")
 	procCloseHandle  = kernel32.NewProc("CloseHandle")
+	procSetConsoleCP = kernel32.NewProc("SetConsoleOutputCP")
 )
 
 func platformDefaultRoot() string {
@@ -28,6 +30,23 @@ func platformDefaultRoot() string {
 	}
 	home, _ := os.UserHomeDir()
 	return filepath.Join(home, "AppData", "Local", "TataCAD")
+}
+
+const (
+	errorAccessDisabledByPolicy = syscall.Errno(1260)
+	errorIntegrityPolicyBlocked = syscall.Errno(4551)
+)
+
+func launchErrorMessage(exe string, err error) string {
+	if errors.Is(err, errorIntegrityPolicyBlocked) || errors.Is(err, errorAccessDisabledByPolicy) ||
+		strings.Contains(err.Error(), "Application Control") {
+		return "Windows blocked TataCAD from starting (" + err.Error() + ").\n\n" +
+			"This is usually Smart App Control (Windows Security > App & browser control), " +
+			"which only allows code-signed applications, or an application control policy " +
+			"set by your organisation. TataCAD is not code-signed yet.\n\n" +
+			"Installed in: " + filepath.Dir(exe)
+	}
+	return fmt.Sprintf("Cannot start TataCAD: %v", err)
 }
 
 func launch(exe string, args []string) error {
@@ -112,6 +131,8 @@ type progressUI struct {
 func newProgressUI() *progressUI {
 	p := &progressUI{lastPercent: -1}
 	if r, _, _ := procAllocConsole.Call(); r != 0 {
+		const cpUTF8 = 65001
+		procSetConsoleCP.Call(cpUTF8)
 		if f, err := os.OpenFile("CONOUT$", os.O_WRONLY, 0); err == nil {
 			p.console = true
 			p.out = f

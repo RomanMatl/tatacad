@@ -106,7 +106,7 @@ func main() {
 	exe := in.ExecutablePath(installed)
 	log.Printf("starting %s", exe)
 	if err := launch(exe, flag.Args()); err != nil {
-		fatal(fmt.Sprintf("Cannot start TataCAD: %v", err))
+		fatal(launchErrorMessage(exe, err))
 	}
 }
 
@@ -133,9 +133,9 @@ func runInstall(in *Installer, installed *Current, m *Manifest) *Current {
 	defer unlock()
 
 	if installed == nil {
-		ui.Status(fmt.Sprintf("Installing TataCAD %s…", m.Version))
+		ui.Status(fmt.Sprintf("Installing TataCAD %s ...", m.Version))
 	} else {
-		ui.Status(fmt.Sprintf("Updating TataCAD %s → %s…", installed.Version, m.Version))
+		ui.Status(fmt.Sprintf("Updating TataCAD %s to %s ...", installed.Version, m.Version))
 	}
 	in.Progress = ui.Progress
 	c, err := in.Install(m.Version, p)
