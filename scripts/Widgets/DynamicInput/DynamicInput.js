@@ -2,8 +2,9 @@ include("scripts/Widgets/Widgets.js");
 include("DynamicInputState.js");
 
 /**
- * AutoCAD-style dynamic input (F12): a box next to the cursor with input
- * fields that depend on the active tool and its state:
+ * AutoCAD-style dynamic input (F12): input fields that depend on the active
+ * tool and its state, shown in the command line row (a box that follows the
+ * cursor cannot be clicked) and mirrored in a read-only box next to the cursor:
  * - first point: X, Y
  * - next point (lines, polylines, move, ...): length, angle from the last point
  * - rectangle second corner: width, height
@@ -26,6 +27,7 @@ DynamicInput.lastDi = undefined;
 DynamicInput.signature = undefined;
 DynamicInput.fields = [];
 DynamicInput.box = undefined;
+DynamicInput.bar = undefined;
 DynamicInput.redirecting = false;
 
 DynamicInput.isEnabled = function() {
@@ -155,6 +157,9 @@ DynamicInput.hideBox = function() {
     if (!isNull(DynamicInput.box) && !isDeleted(DynamicInput.box)) {
         DynamicInput.box.visible = false;
     }
+    if (!isNull(DynamicInput.bar) && !isDeleted(DynamicInput.bar)) {
+        DynamicInput.bar.visible = false;
+    }
 };
 
 DynamicInput.getBox = function(viewWidget) {
@@ -162,29 +167,77 @@ DynamicInput.getBox = function(viewWidget) {
     if (isNull(box)) {
         box = new QWidget(viewWidget);
         box.objectName = "DynamicInputBox";
+        box.setAttribute(Qt.WA_TransparentForMouseEvents, true);
         box.styleSheet =
             "QWidget#DynamicInputBox { background-color: rgba(255,255,225,235);"
             + " border: 1px solid #888; border-radius: 3px; }"
             + " QLabel { color: black; background: transparent; }"
-            + " QLineEdit { background: white; color: black; border: 1px solid #aaa;"
-            + " min-width: 60px; max-width: 90px; padding: 0 2px; }"
-            + " QLineEdit:focus { border: 1px solid #1565c0; }";
+            + " QLabel#DynamicInputValues { color: #1565c0; }";
         var vbox = new QVBoxLayout(box);
         vbox.setContentsMargins(5, 3, 5, 3);
         vbox.setSpacing(2);
         var info = new QLabel(box);
         info.objectName = "DynamicInputInfo";
         vbox.addWidget(info);
-        var host = new QWidget(box);
-        host.objectName = "DynamicInputFields";
-        var grid = new QGridLayout(host);
-        grid.setContentsMargins(0, 0, 0, 0);
-        grid.setSpacing(2);
-        vbox.addWidget(host);
-        DynamicInput.signature = undefined;
+        var values = new QLabel(box);
+        values.objectName = "DynamicInputValues";
+        vbox.addWidget(values);
+        values.visible = false;
     }
     DynamicInput.box = box;
     return box;
+};
+
+/**
+ * \return Row of input fields placed between the command line prompt
+ * ("Next point:") and the command line edit.
+ */
+DynamicInput.getBar = function() {
+    if (!isNull(DynamicInput.bar) && !isDeleted(DynamicInput.bar)) {
+        return DynamicInput.bar;
+    }
+    var commandEdit = EAction.getMainWindow().findChild("CommandEdit");
+    if (isNull(commandEdit)) {
+        return undefined;
+    }
+    var parent = commandEdit.parentWidget();
+    var bar = new QWidget(parent);
+    bar.objectName = "DynamicInputBar";
+    bar.styleSheet = "QLineEdit { min-width: 70px; max-width: 100px; }"
+        + " QLineEdit:focus { border: 1px solid #1565c0; }";
+    var layout = new QHBoxLayout(bar);
+    layout.setContentsMargins(0, 0, 4, 0);
+    layout.setSpacing(4);
+    var row = parent.findChild("horizontalLayout");
+    if (!isNull(row) && isFunction(row.insertWidget)) {
+        row.insertWidget(1, bar);
+    }
+    else {
+        parent.layout().addWidget(bar);
+    }
+    bar.visible = false;
+    DynamicInput.bar = bar;
+    DynamicInput.signature = undefined;
+    return bar;
+};
+
+/**
+ * Shows the typed values next to the cursor.
+ */
+DynamicInput.updateValues = function() {
+    if (isNull(DynamicInput.box) || isDeleted(DynamicInput.box)) {
+        return;
+    }
+    var parts = [];
+    for (var i = 0; i < DynamicInput.fields.length; i++) {
+        var f = DynamicInput.fields[i];
+        if (f.geometry && f.edit.text.trim().length > 0) {
+            parts.push(f.label.text + ": " + f.edit.text.trim());
+        }
+    }
+    var values = DynamicInput.box.findChild("DynamicInputValues");
+    values.text = parts.join("   ");
+    values.visible = parts.length > 0;
 };
 
 DynamicInput.clearFields = function() {
@@ -195,10 +248,9 @@ DynamicInput.clearFields = function() {
     DynamicInput.fields = [];
 };
 
-DynamicInput.buildFields = function(box, mode) {
+DynamicInput.buildFields = function(bar, mode) {
     DynamicInput.clearFields();
-    var host = box.findChild("DynamicInputFields");
-    var grid = host.layout();
+    var layout = bar.layout();
     var specs = [];
     var geo = DynamicInput.modeFields[mode] || [];
     for (var i = 0; i < geo.length; i++) {
@@ -211,15 +263,15 @@ DynamicInput.buildFields = function(box, mode) {
 
     for (var r = 0; r < specs.length; r++) {
         (function(spec, row) {
-            var label = new QLabel(spec.label, host);
-            var edit = new QLineEdit(host);
+            var label = new QLabel(spec.label, bar);
+            var edit = new QLineEdit(bar);
             edit.objectName = "DynamicInput_" + spec.key;
             if (!spec.geometry) {
                 edit.text = spec.spin ? String(spec.target.value) : spec.target.text;
             }
-            grid.addWidget(label, row, 0);
-            grid.addWidget(edit, row, 1);
-            // children added to an already visible box are not shown by Qt:
+            layout.addWidget(label, 0, 0);
+            layout.addWidget(edit, 0, 0);
+            // children added to an already visible widget are not shown by Qt:
             label.visible = true;
             edit.visible = true;
             var field = { key: spec.key, label: label, edit: edit, geometry: spec.geometry, target: spec.target, spin: spec.spin };
@@ -229,7 +281,7 @@ DynamicInput.buildFields = function(box, mode) {
             edit.returnPressed.connect(function() { DynamicInput.onReturn(field); });
         })(specs[r], r);
     }
-    host.visible = specs.length > 0;
+    bar.visible = specs.length > 0;
 };
 
 DynamicInput.getField = function(key) {
@@ -257,6 +309,7 @@ DynamicInput.focusNext = function(field, text) {
  * AutoCAD habit: "," after X jumps to Y, "<" after a length jumps to the angle.
  */
 DynamicInput.onTextEdited = function(field, text) {
+    DynamicInput.updateValues();
     var sep = undefined;
     if (field.key === "x" && /^[-+]?[\d.]+,/.test(text)) {
         sep = ",";
@@ -363,6 +416,7 @@ DynamicInput.onReturn = function(field) {
             DynamicInput.fields[i].edit.text = "";
         }
     }
+    DynamicInput.updateValues();
     view.getWidget().setFocus(Qt.OtherFocusReason);
     di.coordinateEvent(new RCoordinateEvent(pos, view.getScene(), getRGraphicsView(view)));
 };
@@ -404,13 +458,15 @@ DynamicInput.update = function(di) {
         return;
     }
     var box = DynamicInput.getBox(view.getWidget());
+    var bar = DynamicInput.getBar();
 
     var info = DynamicInputState.read();
     var mode = DynamicInput.getMode(info, di);
     var sig = mode + "|" + (isNull(info) ? "" : info.cls + ":" + info.state);
-    if (sig !== DynamicInput.signature) {
+    if (sig !== DynamicInput.signature && !isNull(bar)) {
         DynamicInput.signature = sig;
-        DynamicInput.buildFields(box, mode);
+        DynamicInput.buildFields(bar, mode);
+        DynamicInput.updateValues();
     }
 
     var cursor = di.getCursorPosition();
@@ -429,7 +485,7 @@ DynamicInput.update = function(di) {
         info.visible = false;
     }
 
-    if (!info.visible && DynamicInput.fields.length === 0) {
+    if (!info.visible && !box.findChild("DynamicInputValues").visible) {
         box.visible = false;
         return;
     }
