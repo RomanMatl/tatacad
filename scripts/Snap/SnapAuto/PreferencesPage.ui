@@ -49,6 +49,9 @@
       </item>
       <item>
        <widget class="QCheckBox" name="CenterPoints">
+        <property name="checked">
+         <bool>true</bool>
+        </property>
         <property name="text">
          <string>Center points</string>
         </property>
@@ -96,6 +99,9 @@
       </item>
       <item>
        <widget class="QCheckBox" name="PointsOnEntity">
+        <property name="checked">
+         <bool>true</bool>
+        </property>
         <property name="text">
          <string>Points on entity</string>
         </property>

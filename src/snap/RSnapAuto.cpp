@@ -240,18 +240,9 @@ RVector RSnapAuto::snap(const RVector& position, RGraphicsView& view, double ran
         lastSnap = RVector::invalid;
     }
 
-    // grid points:
-    if (getGridPoints()) {
-        RSnapGrid snapGrid;
-        lastSnap = snapGrid.snap(position, view, range);
-        if (RSnap::isInRange(lastSnap, position, range, view)) {
-            status = RSnap::Grid;
-            return lastSnap;
-        }
-        lastSnap = RVector::invalid;
-    }
-
-    // on entity snap is slow and almost never used:
+    // TataCAD: a point on a line or curve under the cursor wins over the grid
+    // (as in AutoCAD); with the grid first, a fine grid always matched and
+    // snapping to drawn entities never happened.
     if (foundEntities && getPointsOnEntity()) {
         for (int k=0; k<idsList.size() && k<queryBoxList.size(); k++) {
             // query box and matching IDs cached from intersection snap:
@@ -266,6 +257,17 @@ RVector RSnapAuto::snap(const RVector& position, RGraphicsView& view, double ran
                 entityIds = snapOnEntity.getEntityIds();
                 return lastSnap;
             }
+        }
+        lastSnap = RVector::invalid;
+    }
+
+    // grid points:
+    if (getGridPoints()) {
+        RSnapGrid snapGrid;
+        lastSnap = snapGrid.snap(position, view, range);
+        if (RSnap::isInRange(lastSnap, position, range, view)) {
+            status = RSnap::Grid;
+            return lastSnap;
         }
         lastSnap = RVector::invalid;
     }
@@ -288,12 +290,12 @@ void RSnapAuto::init(bool force) {
     setIntersections(RSettings::getBoolValue("AutoSnap/Intersections", true));
     setEndPoints(RSettings::getBoolValue("AutoSnap/EndPoints", true));
     setMiddlePoints(RSettings::getBoolValue("AutoSnap/MiddlePoints", true));
-    setCenterPoints(RSettings::getBoolValue("AutoSnap/CenterPoints", false));
+    setCenterPoints(RSettings::getBoolValue("AutoSnap/CenterPoints", true));
     setPerpendicular(RSettings::getBoolValue("AutoSnap/Perpendicular", true));
     setTangential(RSettings::getBoolValue("AutoSnap/Tangential", true));
     setReferencePoints(RSettings::getBoolValue("AutoSnap/ReferencePoints", true));
     setGridPoints(RSettings::getBoolValue("AutoSnap/GridPoints", true));
-    setPointsOnEntity(RSettings::getBoolValue("AutoSnap/PointsOnEntity", false));
+    setPointsOnEntity(RSettings::getBoolValue("AutoSnap/PointsOnEntity", true));
     setFreePositioning(RSettings::getBoolValue("AutoSnap/FreePositioning", true));
 
     initialized = true;
